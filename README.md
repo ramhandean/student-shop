@@ -25,10 +25,10 @@ Aplikasi e-commerce sederhana untuk jual-beli produk online dengan sistem pembel
 
 ## 📋 Persyaratan Sistem
 
-- PHP >= 5.6
-- MySQL >= 5.1
+- PHP 7.4+ (tested on PHP 8.3.6)
+- MySQL 5.1+ atau MariaDB
 - Apache/Nginx
-- Composer (optional)
+- MySQLi Extension
 
 ## 🚀 Cara Instalasi
 
@@ -38,44 +38,50 @@ git clone https://github.com/ramhandean/student-shop.git
 cd student-shop
 ```
 
-### 2. Setup Database
+### 2. Install PHP MySQLi Extension
 ```bash
-# Import database dari file SQL
-mysql -u root -p nama_database < assets/ss.sql
+# Untuk PHP 8.3
+sudo apt install php8.3-mysqli php8.3-mysql
+
+# Atau sesuaikan dengan versi PHP Anda
+sudo apt install php[version]-mysqli php[version]-mysql
 ```
 
-### 3. Konfigurasi Database
-Edit file `application/config/database.php`:
+### 3. Setup Database
+```bash
+# Buat database
+sudo mysql -e "CREATE DATABASE student_shop;"
+
+# Import SQL file
+sudo mysql student_shop < assets/ss.sql
+```
+
+### 4. Konfigurasi Database
+File [application/config/database.php](application/config/database.php) sudah dikonfigurasi:
 ```php
 $db['default'] = array(
     'dsn'   => '',
     'hostname' => 'localhost',
     'username' => 'root',
-    'password' => 'your_password',
-    'database' => 'nama_database',
+    'password' => '',  // kosong jika login via sudo
+    'database' => 'student_shop',
     'dbdriver' => 'mysqli',
     // ... konfigurasi lainnya
 );
 ```
 
-### 4. Konfigurasi Base URL
-Edit file `application/config/config.php`:
+### 5. Konfigurasi Base URL (Optional)
+Edit file `application/config/config.php` jika diperlukan:
 ```php
 $config['base_url'] = 'http://localhost:8000/';
-```
-
-### 5. Set Permission
-```bash
-chmod 755 application/logs/
-chmod 755 application/cache/
 ```
 
 ### 6. Jalankan Aplikasi
 ```bash
 # Menggunakan PHP built-in server (development)
-php -S localhost:8000
+sudo php -S localhost:8000
 
-# Atau setup di Apache/Nginx untuk production
+# Buka di browser: http://localhost:8000
 ```
 
 ## 📁 Struktur Folder
@@ -108,24 +114,38 @@ http://localhost:8000/
 ```
 
 ### Login
-1. Buka halaman login
-2. Masukkan username dan password
-3. Pilih role: **Pembeli** atau **Penjual**
+Akses aplikasi di `http://localhost:8000/` dan login dengan salah satu akun berikut:
 
-### Sebagai Pembeli
-1. Home → Browse produk
-2. Klik produk yang ingin dibeli
-3. Masukkan jumlah dan "Tambah ke Keranjang"
-4. Keranjang → Review pesanan
-5. Checkout → Selesaikan pembayaran
-6. Pesanan → Lihat status pengiriman
+#### Akun Pembeli (SISWA)
+| Username | Password | Status |
+|----------|----------|--------|
+| `deanramhan` | `1` | Siswa + Penjual |
+| `ardianrifki24` | `2` | Siswa + Penjual |
+| `saha` | `123` | Siswa |
 
-### Sebagai Penjual
-1. Login sebagai penjual
-2. Dashboard → Kelola Produk
-3. Tambah Barang → Input detail produk
-4. Kelola pesanan di menu Pesanan
-5. Kelola pengiriman di menu Pengiriman Barang
+#### Akun Penjual/Guru
+| Username | Password | Status |
+|----------|----------|--------|
+| `guru` | `12` | Guru |
+
+**Catatan**: Beberapa akun memiliki role ganda (Siswa + Penjual), jadi bisa login sebagai pembeli dan penjual sekaligus.
+
+### Menggunakan Aplikasi sebagai Pembeli
+1. Login dengan akun pembeli
+2. Home → Browse daftar produk
+3. Klik produk yang ingin dibeli
+4. Masukkan jumlah dan "Tambah ke Keranjang"
+5. Keranjang → Review pesanan
+6. Checkout → Selesaikan pemesanan
+7. Pesanan → Lihat status pesanan dan pengiriman
+
+### Menggunakan Aplikasi sebagai Penjual
+1. Login dengan akun penjual (cek role di profil)
+2. Dashboard Penjual → Kelola produk
+3. Tambah Barang → Input detail produk baru
+4. Kelola pesanan di menu "Pesanan"
+5. Kelola pengiriman di menu "Pengiriman Barang"
+6. Terima atau tolak pesanan dari pembeli
 
 ## 🛠️ Teknologi yang Digunakan
 
@@ -136,21 +156,38 @@ http://localhost:8000/
 
 ## 📝 Struktur Database
 
+Database `student_shop` memiliki tabel-tabel berikut:
+
 ### Tabel Utama
-- `users` - Data pengguna (pembeli & penjual)
-- `products/barang` - Data produk
-- `orders/pesanan` - Data pesanan
-- `order_items/pesanan_barang` - Detail item di pesanan
-- `cart/keranjang` - Keranjang belanja
-- `shipment/pengiriman` - Data pengiriman
+- `tbl_user` - Data pengguna (Siswa/Guru) dengan username, password, dan status
+- `tbl_siswa` - Detail siswa dengan NIS
+- `tbl_guru` - Detail guru dengan NIP
+- `tbl_penjual` - Data penjual (seller)
+- `tbl_barang` - Produk yang dijual beserta harga dan stok
+- `tbl_transaksi` - Riwayat transaksi/pesanan dengan status (Dikeranjang, Dipesan, Berhasil, Diproses, Ditolak)
+- `tbl_admin` - Data admin (optional, tidak dipakai di user interface)
 
-## 🔒 Catatan Keamanan
+## 🔒 Catatan Keamanan & Troubleshooting
 
-- Perbarui password default
-- Jangan expose database credentials
-- Setup HTTPS untuk production
-- Validasi semua input user
-- Use environment variables untuk sensitive data
+### Troubleshooting Instalasi
+
+**Error: "Access denied for user 'root'@'localhost'"**
+- Jalankan MySQL dengan `sudo mysql` tanpa password
+- Atau setup password MySQL di konfigurasi database.php
+
+**Error: "Call to undefined function mysqli_init()"**
+- Install MySQLi extension: `sudo apt install php8.3-mysqli`
+- Restart PHP server setelah install
+
+**Error: "Creation of dynamic property CI_URI::$config is deprecated" (PHP 8.2+)**
+- File [index.php](index.php) sudah dikonfigurasi untuk suppress warning
+- Atau downgrade ke PHP 7.4 jika diperlukan
+
+### Best Practice
+- **Development Mode**: Gunakan `sudo php -S localhost:8000` untuk menjalankan
+- **Login**: Selalu gunakan akun yang sudah tersedia di database
+- **Password Hashing**: Password di database menggunakan MD5 (legacy, tidak recommended untuk production)
+- **Database**: Jangan hardcode password di source code, gunakan environment variables untuk production
 
 ## �‍💻 Developer
 
